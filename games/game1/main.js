@@ -20,24 +20,25 @@ class Game {
     // 游戏分数
     this.score = 0;
     
-    // 游戏元素
+    // 挡板配置
     this.paddle = {
-      x: this.width / 2 - 50,
-      y: this.height - 30,
       width: 100,
       height: 15,
+      x: 0,
+      y: this.height - 30,
       speed: 8,
-      color: '#4CAF50'
+      color: '#2196F3'
     };
     
+    // 球配置
     this.ball = {
-      x: this.width / 2,
-      y: this.height - 50,
-      radius: 8,
-      speedX: 0,
-      speedY: 0,
-      maxSpeed: 8,
-      color: '#FFC107'
+      x: 0,
+      y: 0,
+      radius: 10,
+      speedX: 5,
+      speedY: -5,
+      color: '#F44336',
+      maxSpeed: 15
     };
     
     // 砖块配置
@@ -47,10 +48,13 @@ class Game {
       width: 60,
       height: 20,
       padding: 10,
-      offsetX: 45,
-      offsetY: 60,
-      colors: ['#F44336', '#E91E63', '#9C27B0', '#3F51B5', '#2196F3']
+      offsetTop: 80,
+      offsetLeft: 35,
+      colors: ['#F44336', '#E91E63', '#9C27B0', '#673AB7', '#3F51B5']
     };
+    
+    // 砖块数组
+    this.bricks = [];
     
     // 初始化砖块
     this.initBricks();
@@ -69,32 +73,49 @@ class Game {
   
   // 初始化砖块
   initBricks() {
-    this.bricks = [];
-    const { rows, cols, width, height, padding, offsetX, offsetY, colors } = this.brickConfig;
+    const { rows, cols, width, height, padding, offsetTop, offsetLeft, colors } = this.brickConfig;
     
+    this.bricks = [];
     for (let r = 0; r < rows; r++) {
-      this.bricks[r] = [];
       for (let c = 0; c < cols; c++) {
-        const brickX = c * (width + padding) + offsetX;
-        const brickY = r * (height + padding) + offsetY;
-        
-        this.bricks[r][c] = {
-          x: brickX,
-          y: brickY,
+        const brick = {
+          x: c * (width + padding) + offsetLeft,
+          y: r * (height + padding) + offsetTop,
           width,
           height,
-          color: colors[r],
-          status: 1 // 1 = 存在，0 = 被击中
+          color: colors[r % colors.length],
+          hit: false
         };
+        this.bricks.push(brick);
       }
     }
   }
   
   // 初始化触摸事件
   initTouchEvents() {
-    this.touchHandler = (e) => {
+    // 触摸移动处理函数
+    this.touchMoveHandler = (e) => {
+      if (this.gameState !== 'playing') return;
+      
       const touch = e.touches[0];
       const touchX = touch.clientX;
+      
+      // 移动挡板（中心对齐）
+      this.paddle.x = touchX - this.paddle.width / 2;
+      
+      // 确保挡板不超出边界
+      if (this.paddle.x < 0) {
+        this.paddle.x = 0;
+      } else if (this.paddle.x + this.paddle.width > this.width) {
+        this.paddle.x = this.width - this.paddle.width;
+      }
+    };
+    
+    // 触摸开始处理函数
+    this.touchStartHandler = (e) => {
+      const touch = e.touches[0];
+      const touchX = touch.clientX;
+      const touchY = touch.clientY;
       
       // 如果游戏处于准备状态，开始游戏
       if (this.gameState === 'ready') {
@@ -108,21 +129,30 @@ class Game {
         return;
       }
       
-      // 移动挡板
-      const paddleHalfWidth = this.paddle.width / 2;
-      this.paddle.x = touchX - paddleHalfWidth;
+      // 检查返回按钮点击
+      if (this.backButton && 
+          touchX >= this.backButton.x && touchX <= this.backButton.x + this.backButton.width &&
+          touchY >= this.backButton.y && touchY <= this.backButton.y + this.backButton.height) {
+        this.exitGame();
+        return;
+      }
       
-      // 确保挡板不超出边界
-      if (this.paddle.x < 0) {
-        this.paddle.x = 0;
-      } else if (this.paddle.x + this.paddle.width > this.width) {
-        this.paddle.x = this.width - this.paddle.width;
+      // 如果游戏正在进行，移动挡板
+      if (this.gameState === 'playing') {
+        this.paddle.x = touchX - this.paddle.width / 2;
+        
+        // 确保挡板不超出边界
+        if (this.paddle.x < 0) {
+          this.paddle.x = 0;
+        } else if (this.paddle.x + this.paddle.width > this.width) {
+          this.paddle.x = this.width - this.paddle.width;
+        }
       }
     };
     
     // 注册触摸事件
-    wx.onTouchMove(this.touchHandler);
-    wx.onTouchStart(this.touchHandler);
+    wx.onTouchMove(this.touchMoveHandler);
+    wx.onTouchStart(this.touchStartHandler);
   }
   
   // 开始游戏
@@ -130,34 +160,24 @@ class Game {
     if (this.gameState !== 'ready' && this.gameState !== 'gameOver') return;
     
     this.gameState = 'playing';
+    this.score = 0;
     
-    // 设置球的初始速度
-    this.ball.speedX = 4;
-    this.ball.speedY = -4;
+    // 重置挡板位置
+    this.paddle.x = (this.width - this.paddle.width) / 2;
     
-    // 重置球的位置
+    // 重置球位置和速度
     this.ball.x = this.width / 2;
     this.ball.y = this.height - 50;
+    this.ball.speedX = 5;
+    this.ball.speedY = -5;
+    
+    // 重置砖块
+    this.initBricks();
   }
   
   // 重置游戏
   resetGame() {
-    this.score = 0;
     this.gameState = 'ready';
-    
-    // 重置球的位置和速度
-    this.ball.x = this.width / 2;
-    this.ball.y = this.height - 50;
-    this.ball.speedX = 0;
-    this.ball.speedY = 0;
-    
-    // 重置挡板位置
-    this.paddle.x = this.width / 2 - this.paddle.width / 2;
-    
-    // 重新初始化砖块
-    this.initBricks();
-    
-    // 显示开始界面
     this.showStartScreen();
   }
   
@@ -169,23 +189,23 @@ class Game {
     ctx.clearRect(0, 0, this.width, this.height);
     
     // 绘制背景
-    ctx.fillStyle = '#f0f0f0';
+    ctx.fillStyle = '#ECEFF1';
     ctx.fillRect(0, 0, this.width, this.height);
     
     // 绘制游戏标题
-    ctx.fillStyle = '#333';
+    ctx.fillStyle = '#2196F3';
     ctx.font = 'bold 36px Arial';
     ctx.textAlign = 'center';
     ctx.fillText('弹球游戏', this.width / 2, 100);
     
     // 绘制开始提示
+    ctx.fillStyle = '#455A64';
     ctx.font = '24px Arial';
     ctx.fillText('点击屏幕开始游戏', this.width / 2, this.height / 2);
     
     // 绘制游戏说明
     ctx.font = '18px Arial';
-    ctx.fillText('用手指左右滑动控制挡板', this.width / 2, this.height / 2 + 50);
-    ctx.fillText('击碎所有砖块获得积分', this.width / 2, this.height / 2 + 80);
+    ctx.fillText('移动挡板反弹球，击碎所有砖块', this.width / 2, this.height / 2 + 40);
     
     // 绘制返回按钮
     this.drawBackButton();
@@ -227,43 +247,30 @@ class Game {
     };
     
     // 绘制按钮
-    ctx.fillStyle = '#333';
+    ctx.fillStyle = '#CFD8DC';
     ctx.fillRect(this.backButton.x, this.backButton.y, this.backButton.width, this.backButton.height);
     
+    // 绘制按钮边框
+    ctx.strokeStyle = '#90A4AE';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(this.backButton.x, this.backButton.y, this.backButton.width, this.backButton.height);
+    
     // 绘制按钮文字
-    ctx.fillStyle = '#fff';
+    ctx.fillStyle = '#455A64';
     ctx.font = '16px Arial';
     ctx.textAlign = 'center';
     ctx.fillText('返回', this.backButton.x + this.backButton.width / 2, this.backButton.y + this.backButton.height / 2 + 5);
-    
-    // 添加返回按钮点击事件
-    if (!this.backButtonHandler) {
-      this.backButtonHandler = (e) => {
-        const touch = e.touches[0];
-        const touchX = touch.clientX;
-        const touchY = touch.clientY;
-        
-        // 检查是否点击了返回按钮
-        if (touchX >= this.backButton.x && touchX <= this.backButton.x + this.backButton.width &&
-            touchY >= this.backButton.y && touchY <= this.backButton.y + this.backButton.height) {
-          this.exitGame();
-        }
-      };
-      
-      wx.onTouchStart(this.backButtonHandler);
-    }
   }
   
   // 退出游戏
   exitGame() {
     // 移除事件监听
-    if (this.touchHandler) {
-      wx.offTouchMove(this.touchHandler);
-      wx.offTouchStart(this.touchHandler);
+    if (this.touchMoveHandler) {
+      wx.offTouchMove(this.touchMoveHandler);
     }
     
-    if (this.backButtonHandler) {
-      wx.offTouchStart(this.backButtonHandler);
+    if (this.touchStartHandler) {
+      wx.offTouchStart(this.touchStartHandler);
     }
     
     // 调用退出回调
@@ -273,7 +280,7 @@ class Game {
   }
   
   // 更新游戏状态
-  update(deltaTime) {
+  update() {
     if (this.gameState !== 'playing') return;
     
     // 移动球
@@ -289,32 +296,32 @@ class Game {
     // 检测球与砖块的碰撞
     this.checkBrickCollision();
     
-    // 检查是否所有砖块都被击中
+    // 检查关卡是否完成
     this.checkLevelComplete();
     
-    // 检查是否游戏结束（球掉落）
+    // 检查游戏是否结束
     this.checkGameOver();
   }
   
   // 检测球与墙壁的碰撞
   checkWallCollision() {
-    // 左右墙壁
+    // 左右墙壁碰撞
     if (this.ball.x - this.ball.radius < 0 || 
         this.ball.x + this.ball.radius > this.width) {
       this.ball.speedX = -this.ball.speedX;
       
-      // 修正位置，防止卡在墙内
+      // 确保球不会卡在墙内
       if (this.ball.x - this.ball.radius < 0) {
         this.ball.x = this.ball.radius;
-      } else {
+      } else if (this.ball.x + this.ball.radius > this.width) {
         this.ball.x = this.width - this.ball.radius;
       }
     }
     
-    // 上墙壁
+    // 上墙壁碰撞
     if (this.ball.y - this.ball.radius < 0) {
       this.ball.speedY = -this.ball.speedY;
-      this.ball.y = this.ball.radius; // 修正位置
+      this.ball.y = this.ball.radius; // 确保球不会卡在墙内
     }
   }
   
@@ -325,93 +332,94 @@ class Game {
         this.ball.x > this.paddle.x && 
         this.ball.x < this.paddle.x + this.paddle.width) {
       
-      // 计算碰撞点相对于挡板中心的位置（-1到1之间）
+      // 计算球击中挡板的位置（相对于挡板中心的偏移）
       const hitPos = (this.ball.x - (this.paddle.x + this.paddle.width / 2)) / (this.paddle.width / 2);
       
-      // 根据碰撞位置调整反弹角度
-      const angle = hitPos * Math.PI / 3; // 最大±60度
+      // 根据击中位置调整球的水平速度（-1.0到1.0的范围）
+      this.ball.speedX = hitPos * 8;
       
-      // 计算新的速度
-      const speed = Math.sqrt(this.ball.speedX * this.ball.speedX + this.ball.speedY * this.ball.speedY);
-      this.ball.speedX = speed * Math.sin(angle);
-      this.ball.speedY = -speed * Math.cos(angle);
+      // 反弹球
+      this.ball.speedY = -Math.abs(this.ball.speedY);
       
       // 确保球不会卡在挡板内
       this.ball.y = this.paddle.y - this.ball.radius;
+      
+      // 增加球速（随着游戏进行，球会越来越快）
+      this.increaseBallSpeed();
     }
   }
   
   // 检测球与砖块的碰撞
   checkBrickCollision() {
-    const { rows, cols } = this.brickConfig;
-    
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        const brick = this.bricks[r][c];
+    for (const brick of this.bricks) {
+      if (!brick.hit && 
+          this.ball.x + this.ball.radius > brick.x && 
+          this.ball.x - this.ball.radius < brick.x + brick.width && 
+          this.ball.y + this.ball.radius > brick.y && 
+          this.ball.y - this.ball.radius < brick.y + brick.height) {
         
-        // 如果砖块已被击中，跳过
-        if (brick.status === 0) continue;
+        // 标记砖块为已击中
+        brick.hit = true;
         
-        // 检查碰撞
-        if (this.ball.x > brick.x && 
-            this.ball.x < brick.x + brick.width && 
-            this.ball.y > brick.y && 
-            this.ball.y < brick.y + brick.height) {
-          
-          // 改变球的方向
+        // 增加分数
+        this.score += 10;
+        
+        // 确定球从哪个方向击中砖块
+        // 计算球心到砖块四条边的距离
+        const distLeft = Math.abs(this.ball.x - brick.x);
+        const distRight = Math.abs(this.ball.x - (brick.x + brick.width));
+        const distTop = Math.abs(this.ball.y - brick.y);
+        const distBottom = Math.abs(this.ball.y - (brick.y + brick.height));
+        
+        // 找出最小距离，确定碰撞方向
+        const minDist = Math.min(distLeft, distRight, distTop, distBottom);
+        
+        if (minDist === distLeft || minDist === distRight) {
+          // 水平碰撞
+          this.ball.speedX = -this.ball.speedX;
+        } else {
+          // 垂直碰撞
           this.ball.speedY = -this.ball.speedY;
-          
-          // 标记砖块为已击中
-          brick.status = 0;
-          
-          // 增加分数
-          this.score += 10;
-          
-          // 播放音效
-          // TODO: 添加音效
-          
-          // 检查是否需要增加球速
-          this.increaseBallSpeed();
         }
+        
+        // 只处理一次碰撞（防止一帧内多次碰撞）
+        break;
       }
     }
   }
   
-  // 增加球的速度
+  // 增加球速
   increaseBallSpeed() {
-    // 每得到50分增加一点速度，但不超过最大速度
-    if (this.score % 50 === 0) {
-      const currentSpeed = Math.sqrt(this.ball.speedX * this.ball.speedX + this.ball.speedY * this.ball.speedY);
-      if (currentSpeed < this.ball.maxSpeed) {
-        // 增加10%的速度
-        const factor = 1.1;
-        this.ball.speedX *= factor;
-        this.ball.speedY *= factor;
-      }
+    // 每次击中挡板，球速略微增加
+    const speedIncrease = 0.2;
+    
+    // 增加X速度（保持方向）
+    if (this.ball.speedX > 0) {
+      this.ball.speedX = Math.min(this.ball.speedX + speedIncrease, this.ball.maxSpeed);
+    } else {
+      this.ball.speedX = Math.max(this.ball.speedX - speedIncrease, -this.ball.maxSpeed);
+    }
+    
+    // 增加Y速度（保持方向）
+    if (this.ball.speedY > 0) {
+      this.ball.speedY = Math.min(this.ball.speedY + speedIncrease, this.ball.maxSpeed);
+    } else {
+      this.ball.speedY = Math.max(this.ball.speedY - speedIncrease, -this.ball.maxSpeed);
     }
   }
   
   // 检查关卡是否完成
   checkLevelComplete() {
-    const { rows, cols } = this.brickConfig;
-    let allBricksHit = true;
-    
     // 检查是否所有砖块都被击中
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        if (this.bricks[r][c].status === 1) {
-          allBricksHit = false;
-          break;
-        }
-      }
-      if (!allBricksHit) break;
-    }
+    const allBricksHit = this.bricks.every(brick => brick.hit);
     
-    // 如果所有砖块都被击中，游戏胜利
     if (allBricksHit) {
+      // 关卡完成
+      this.gameState = 'gameOver';
+      
       // 奖励积分
-      const bonusPoints = 100;
-      this.score += bonusPoints;
+      const levelCompleteBonus = 100;
+      this.score += levelCompleteBonus;
       
       // 更新全局积分
       if (this.callbacks && typeof this.callbacks.onScoreUpdate === 'function') {
@@ -420,26 +428,21 @@ class Game {
       
       // 显示胜利消息
       wx.showToast({
-        title: `胜利！获得${this.score}积分`,
+        title: '恭喜通关！',
         icon: 'success',
         duration: 2000
       });
-      
-      // 重置游戏，准备下一关
-      setTimeout(() => {
-        this.resetGame();
-      }, 2000);
     }
   }
   
   // 检查游戏是否结束
   checkGameOver() {
-    // 如果球掉到屏幕底部，游戏结束
+    // 如果球掉落到屏幕底部，游戏结束
     if (this.ball.y + this.ball.radius > this.height) {
       this.gameState = 'gameOver';
       
-      // 更新全局积分（只有得分大于0才更新）
-      if (this.score > 0 && this.callbacks && typeof this.callbacks.onScoreUpdate === 'function') {
+      // 更新全局积分
+      if (this.callbacks && typeof this.callbacks.onScoreUpdate === 'function') {
         this.callbacks.onScoreUpdate(this.score);
       }
     }
@@ -453,7 +456,7 @@ class Game {
     ctx.clearRect(0, 0, this.width, this.height);
     
     // 绘制背景
-    ctx.fillStyle = '#f0f0f0';
+    ctx.fillStyle = '#ECEFF1';
     ctx.fillRect(0, 0, this.width, this.height);
     
     // 如果游戏处于准备状态，显示开始界面
@@ -462,41 +465,33 @@ class Game {
       return;
     }
     
-    // 如果游戏结束，显示游戏结束界面
+    // 如果游戏已结束，显示游戏结束界面
     if (this.gameState === 'gameOver') {
+      // 先绘制游戏元素，再绘制结束界面
+      this.drawBricks();
+      this.drawPaddle();
+      this.drawBall();
+      this.drawScore();
+      this.drawBackButton();
+      
       this.showGameOverScreen();
       return;
     }
     
-    // 绘制砖块
+    // 绘制游戏元素
     this.drawBricks();
-    
-    // 绘制挡板
     this.drawPaddle();
-    
-    // 绘制球
     this.drawBall();
-    
-    // 绘制分数
     this.drawScore();
-    
-    // 绘制返回按钮
     this.drawBackButton();
   }
   
   // 绘制砖块
   drawBricks() {
     const ctx = this.ctx;
-    const { rows, cols } = this.brickConfig;
     
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        const brick = this.bricks[r][c];
-        
-        // 如果砖块已被击中，跳过
-        if (brick.status === 0) continue;
-        
-        // 绘制砖块
+    for (const brick of this.bricks) {
+      if (!brick.hit) {
         ctx.fillStyle = brick.color;
         ctx.fillRect(brick.x, brick.y, brick.width, brick.height);
         
@@ -512,12 +507,11 @@ class Game {
   drawPaddle() {
     const ctx = this.ctx;
     
-    // 绘制挡板主体
     ctx.fillStyle = this.paddle.color;
     ctx.fillRect(this.paddle.x, this.paddle.y, this.paddle.width, this.paddle.height);
     
     // 绘制挡板边框
-    ctx.strokeStyle = '#333';
+    ctx.strokeStyle = '#1565C0';
     ctx.lineWidth = 2;
     ctx.strokeRect(this.paddle.x, this.paddle.y, this.paddle.width, this.paddle.height);
   }
@@ -530,20 +524,22 @@ class Game {
     ctx.arc(this.ball.x, this.ball.y, this.ball.radius, 0, Math.PI * 2);
     ctx.fillStyle = this.ball.color;
     ctx.fill();
-    ctx.strokeStyle = '#333';
+    ctx.closePath();
+    
+    // 绘制球的边框
+    ctx.strokeStyle = '#C62828';
     ctx.lineWidth = 2;
     ctx.stroke();
-    ctx.closePath();
   }
   
   // 绘制分数
   drawScore() {
     const ctx = this.ctx;
     
-    ctx.fillStyle = '#333';
-    ctx.font = '16px Arial';
-    ctx.textAlign = 'right';
-    ctx.fillText(`得分: ${this.score}`, this.width - 20, 30);
+    ctx.fillStyle = '#455A64';
+    ctx.font = '20px Arial';
+    ctx.textAlign = 'left';
+    ctx.fillText(`得分: ${this.score}`, 120, 30);
   }
   
   // 游戏动画循环
@@ -565,13 +561,12 @@ class Game {
   // 销毁游戏实例
   destroy() {
     // 移除事件监听
-    if (this.touchHandler) {
-      wx.offTouchMove(this.touchHandler);
-      wx.offTouchStart(this.touchHandler);
+    if (this.touchMoveHandler) {
+      wx.offTouchMove(this.touchMoveHandler);
     }
     
-    if (this.backButtonHandler) {
-      wx.offTouchStart(this.backButtonHandler);
+    if (this.touchStartHandler) {
+      wx.offTouchStart(this.touchStartHandler);
     }
   }
 }
