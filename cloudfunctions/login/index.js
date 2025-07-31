@@ -1,132 +1,174 @@
 // 云函数入口文件
-const cloud = require('wx-server-sdk')
+const cloud = require('wx-server-sdk');
+const config = require('./config.js');
 
 cloud.init({
   env: cloud.DYNAMIC_CURRENT_ENV
-})
+});
 
-const db = cloud.database()
-const _ = db.command
+const db = cloud.database();
+const _ = db.command;
+const userCollection = db.collection('users');
 
 // 云函数入口函数
 exports.main = async (event, context) => {
-  // 获取 WX Context (微信调用上下文)，包括 OPENID、APPID 等信息
-  const wxContext = cloud.getWXContext()
-  const openid = wxContext.OPENID
+  const wxContext = cloud.getWXContext();
+  const openid = wxContext.OPENID;
+  
+  if (!openid) {
+    return {
+      code: -1,
+      msg: '获取用户openid失败'
+    };
+  }
   
   try {
-    // 查询用户是否已存在
-    const userQuery = await db.collection('users').where({
+    // 查询用户是否存在
+    const userResult = await userCollection.where({
       _openid: openid
-    }).get()
+    }).get();
     
     // 获取当前时间
-    const now = new Date()
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+    const now = new Date();
+    const today = formatDate(now);
     
-    // 如果用户已存在
-    if (userQuery.data.length > 0) {
-      const user = userQuery.data[0]
+    // 如果用户不存在，创建新用户
+    if (userResult.data.length === 0) {
+      // 新用户数据
+      const userData = {
+        _openid: openid,
+        nickName: event.userInfo ? event.userInfo.nickName : '游客' + openid.substring(0, 5),
+        avatarUrl: event.userInfo ? event.userInfo.avatarUrl : '',
+        points: config.pointsConfig.initialPoints,
+        unlockedGames: ['game1'], // 默认解锁第一个游戏
+        achievements: [],
+        firstLogin: today,
+        lastLogin: today,
+        loginDays: 1,
+        consecutiveLoginDays: 1,
+        loginHistory: [today],
+        gameHistory: [],
+        purchasedItems: [],
+        createdAt: db.serverDate(),
+        updatedAt: db.serverDate()
+      };
       
-      // 检查是否需要更新每日登录奖励
-      let updateData = {}
-      let dailyLoginBonus = 0
+      // 创建用户
+      await userCollection.add({
+        data: userData
+      });
       
-      // 如果今天还没有登录奖励
-      if (!user.lastLoginDate || new Date(user.lastLoginDate).getTime() < today) {
-        // 基础每日登录奖励
-        dailyLoginBonus = 10
-        
-        // 检查连续登录
-        let consecutiveDays = 1
-        let consecutiveBonus = 0
-        
-        if (user.lastLoginDate) {
-          const lastLogin = new Date(user.lastLoginDate)
-          const yesterday = new Date(today)
-          yesterday.setDate(yesterday.getDate() - 1)
-          
-          // 如果上次登录是昨天，增加连续登录天数
-          if (lastLogin.getTime() >= yesterday.getTime()) {
-            consecutiveDays = (user.consecutiveLoginDays || 0) + 1
-            // 最多计算7天连续登录
-            if (consecutiveDays <= 7) {
-              consecutiveBonus = consecutiveDays * 5 // 每天连续登录奖励5分
-            } else {
-              consecutiveBonus = 7 * 5 // 最多7天连续登录奖励
-            }
-          } else {
-            // 连续登录中断
-            consecutiveDays = 1
-          }
-        }
-        
-        // 更新用户数据
-        updateData = {
-          points: _.inc(dailyLoginBonus + consecutiveBonus),
-          lastLoginDate: now,
-          consecutiveLoginDays: consecutiveDays,
-          lastLoginBonus: dailyLoginBonus + consecutiveBonus
-        }
-        
-        // 更新数据库
-        await db.collection('users').doc(user._id).update({
-          data: updateData
-        })
-        
-        // 获取更新后的用户数据
-        const updatedUser = await db.collection('users').doc(user._id).get()
-        
-        return {
-          success: true,
-          data: updatedUser.data,
-          dailyLoginBonus: dailyLoginBonus,
-          consecutiveBonus: consecutiveBonus
-        }
-      }
-      
-      // 如果今天已经获得了登录奖励，直接返回用户数据
       return {
-        success: true,
-        data: user,
-        dailyLoginBonus: 0,
-        consecutiveBonus: 0
-      }
-    } else {
-      // 用户不存在，创建新用户
-      const result = await db.collection('users').add({
+        code: 0,
+        msg: '新用户创建成功',
         data: {
-          _openid: openid,
-          nickName: '游客' + openid.substring(openid.length - 4),
-          avatarUrl: '',
-          points: 10, // 初始积分
-          unlockedGames: ['game1'], // 默认解锁第一个游戏
-          gameRecords: {}, // 游戏记录
-          achievements: [], // 成就
-          items: [], // 已购买物品
-          createdAt: now,
-          lastLoginDate: now,
-          consecutiveLoginDays: 1,
-          lastLoginBonus: 10
+          ...userData,
+          isNewUser: true,
+          todayFirstLogin: true,
+          loginReward: config.pointsConfig.dailyLoginReward
         }
-      })
+      };
+    }
+    
+    // 用户存在，更新登录信息
+    const user = userResult.data[0];
+    const lastLogin = user.lastLogin || '';
+    const consecutiveLoginDays = user.consecutiveLoginDays || 0;
+    
+    // 检查是否是今天第一次登录
+    const isTodayFirstLogin = lastLogin !== today;
+    
+    // 计算登录奖励
+    let loginReward = 0;
+    let newConsecutiveLoginDays = consecutiveLoginDays;
+    
+    if (isTodayFirstLogin) {
+      // 基础每日登录奖励
+      loginReward += config.pointsConfig.dailyLoginReward;
       
-      // 获取新创建的用户数据
-      const newUser = await db.collection('users').doc(result._id).get()
+      // 检查是否是连续登录
+      const yesterday = formatDate(new Date(now.setDate(now.getDate() - 1)));
+      const isConsecutiveLogin = lastLogin === yesterday;
       
-      return {
-        success: true,
-        data: newUser.data,
-        dailyLoginBonus: 10,
-        consecutiveBonus: 0,
-        isNewUser: true
+      if (isConsecutiveLogin) {
+        // 连续登录天数增加
+        newConsecutiveLoginDays = Math.min(consecutiveLoginDays + 1, config.pointsConfig.maxConsecutiveDays);
+        
+        // 连续登录额外奖励
+        loginReward += config.pointsConfig.consecutiveLoginBonus;
+      } else {
+        // 不是连续登录，重置连续登录天数
+        newConsecutiveLoginDays = 1;
+      }
+      
+      // 更新用户数据
+      const updateData = {
+        lastLogin: today,
+        loginDays: _.inc(1),
+        consecutiveLoginDays: newConsecutiveLoginDays,
+        points: _.inc(loginReward),
+        updatedAt: db.serverDate()
+      };
+      
+      // 如果是新的一天登录，添加到登录历史
+      if (isTodayFirstLogin) {
+        updateData.loginHistory = _.push([today]);
+      }
+      
+      // 更新用户数据
+      await userCollection.doc(user._id).update({
+        data: updateData
+      });
+      
+      // 检查是否达成连续登录成就
+      if (newConsecutiveLoginDays >= 7) {
+        // 查找日常玩家成就
+        const dailyPlayerAchievement = config.achievements.find(a => a.id === 'achievement3');
+        
+        // 检查用户是否已经获得该成就
+        const hasAchievement = user.achievements && user.achievements.includes('achievement3');
+        
+        if (dailyPlayerAchievement && !hasAchievement) {
+          // 添加成就并奖励积分
+          await userCollection.doc(user._id).update({
+            data: {
+              achievements: _.push(['achievement3']),
+              points: _.inc(dailyPlayerAchievement.points)
+            }
+          });
+        }
       }
     }
-  } catch (error) {
-    console.error('登录失败', error)
+    
+    // 获取更新后的用户数据
+    const updatedUserResult = await userCollection.doc(user._id).get();
+    const updatedUser = updatedUserResult.data;
+    
     return {
-      success: false,
-      error: error
-    }
+      code: 0,
+      msg: '登录成功',
+      data: {
+        ...updatedUser,
+        isNewUser: false,
+        todayFirstLogin: isTodayFirstLogin,
+        loginReward: isTodayFirstLogin ? loginReward : 0
+      }
+    };
+    
+  } catch (error) {
+    console.error('登录失败', error);
+    return {
+      code: -1,
+      msg: '登录失败: ' + error.message
+    };
   }
+};
+
+// 格式化日期为 YYYY-MM-DD 格式
+function formatDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}`;
 }
