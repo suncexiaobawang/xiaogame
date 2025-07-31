@@ -1,0 +1,771 @@
+/**app.wxss**/
+.container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+  background-color: #f8f8f8;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+} 
+
+/* 通用样式 */
+.flex-row {
+  display: flex;
+  flex-direction: row;
+}
+
+.flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.flex-around {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
+.flex-grow {
+  flex-grow: 1;
+}
+
+/* 文本样式 */
+.text-center {
+  text-align: center;
+}
+
+.text-left {
+  text-align: left;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.text-bold {
+  font-weight: bold;
+}
+
+.text-small {
+  font-size: 24rpx;
+}
+
+.text-normal {
+  font-size: 28rpx;
+}
+
+.text-large {
+  font-size: 32rpx;
+}
+
+.text-xlarge {
+  font-size: 36rpx;
+}
+
+.text-xxlarge {
+  font-size: 40rpx;
+}
+
+.text-primary {
+  color: #0078d7;
+}
+
+.text-secondary {
+  color: #666;
+}
+
+.text-white {
+  color: #fff;
+}
+
+.text-gray {
+  color: #999;
+}
+
+.text-danger {
+  color: #e74c3c;
+}
+
+.text-success {
+  color: #2ecc71;
+}
+
+.text-warning {
+  color: #f39c12;
+}
+
+.text-info {
+  color: #3498db;
+}
+
+/* 边距样式 */
+.m-5 {
+  margin: 5rpx;
+}
+
+.m-10 {
+  margin: 10rpx;
+}
+
+.m-15 {
+  margin: 15rpx;
+}
+
+.m-20 {
+  margin: 20rpx;
+}
+
+.m-30 {
+  margin: 30rpx;
+}
+
+.mt-5 {
+  margin-top: 5rpx;
+}
+
+.mt-10 {
+  margin-top: 10rpx;
+}
+
+.mt-15 {
+  margin-top: 15rpx;
+}
+
+.mt-20 {
+  margin-top: 20rpx;
+}
+
+.mt-30 {
+  margin-top: 30rpx;
+}
+
+.mb-5 {
+  margin-bottom: 5rpx;
+}
+
+.mb-10 {
+  margin-bottom: 10rpx;
+}
+
+.mb-15 {
+  margin-bottom: 15rpx;
+}
+
+.mb-20 {
+  margin-bottom: 20rpx;
+}
+
+.mb-30 {
+  margin-bottom: 30rpx;
+}
+
+.ml-5 {
+  margin-left: 5rpx;
+}
+
+.ml-10 {
+  margin-left: 10rpx;
+}
+
+.ml-15 {
+  margin-left: 15rpx;
+}
+
+.ml-20 {
+  margin-left: 20rpx;
+}
+
+.ml-30 {
+  margin-left: 30rpx;
+}
+
+.mr-5 {
+  margin-right: 5rpx;
+}
+
+.mr-10 {
+  margin-right: 10rpx;
+}
+
+.mr-15 {
+  margin-right: 15rpx;
+}
+
+.mr-20 {
+  margin-right: 20rpx;
+}
+
+.mr-30 {
+  margin-right: 30rpx;
+}
+
+.p-5 {
+  padding: 5rpx;
+}
+
+.p-10 {
+  padding: 10rpx;
+}
+
+.p-15 {
+  padding: 15rpx;
+}
+
+.p-20 {
+  padding: 20rpx;
+}
+
+.p-30 {
+  padding: 30rpx;
+}
+
+.pt-5 {
+  padding-top: 5rpx;
+}
+
+.pt-10 {
+  padding-top: 10rpx;
+}
+
+.pt-15 {
+  padding-top: 15rpx;
+}
+
+.pt-20 {
+  padding-top: 20rpx;
+}
+
+.pt-30 {
+  padding-top: 30rpx;
+}
+
+.pb-5 {
+  padding-bottom: 5rpx;
+}
+
+.pb-10 {
+  padding-bottom: 10rpx;
+}
+
+.pb-15 {
+  padding-bottom: 15rpx;
+}
+
+.pb-20 {
+  padding-bottom: 20rpx;
+}
+
+.pb-30 {
+  padding-bottom: 30rpx;
+}
+
+.pl-5 {
+  padding-left: 5rpx;
+}
+
+.pl-10 {
+  padding-left: 10rpx;
+}
+
+.pl-15 {
+  padding-left: 15rpx;
+}
+
+.pl-20 {
+  padding-left: 20rpx;
+}
+
+.pl-30 {
+  padding-left: 30rpx;
+}
+
+.pr-5 {
+  padding-right: 5rpx;
+}
+
+.pr-10 {
+  padding-right: 10rpx;
+}
+
+.pr-15 {
+  padding-right: 15rpx;
+}
+
+.pr-20 {
+  padding-right: 20rpx;
+}
+
+.pr-30 {
+  padding-right: 30rpx;
+}
+
+/* 边框样式 */
+.border {
+  border: 1rpx solid #eee;
+}
+
+.border-top {
+  border-top: 1rpx solid #eee;
+}
+
+.border-bottom {
+  border-bottom: 1rpx solid #eee;
+}
+
+.border-left {
+  border-left: 1rpx solid #eee;
+}
+
+.border-right {
+  border-right: 1rpx solid #eee;
+}
+
+.border-radius-small {
+  border-radius: 5rpx;
+}
+
+.border-radius {
+  border-radius: 10rpx;
+}
+
+.border-radius-large {
+  border-radius: 20rpx;
+}
+
+.border-radius-circle {
+  border-radius: 50%;
+}
+
+/* 阴影样式 */
+.shadow {
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+
+.shadow-large {
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.15);
+}
+
+/* 按钮样式 */
+.btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20rpx 30rpx;
+  border-radius: 10rpx;
+  font-size: 28rpx;
+  transition: all 0.3s;
+}
+
+.btn-primary {
+  background-color: #0078d7;
+  color: #fff;
+}
+
+.btn-secondary {
+  background-color: #f8f8f8;
+  color: #333;
+  border: 1rpx solid #ddd;
+}
+
+.btn-success {
+  background-color: #2ecc71;
+  color: #fff;
+}
+
+.btn-danger {
+  background-color: #e74c3c;
+  color: #fff;
+}
+
+.btn-warning {
+  background-color: #f39c12;
+  color: #fff;
+}
+
+.btn-info {
+  background-color: #3498db;
+  color: #fff;
+}
+
+.btn-small {
+  padding: 10rpx 20rpx;
+  font-size: 24rpx;
+}
+
+.btn-large {
+  padding: 25rpx 40rpx;
+  font-size: 32rpx;
+}
+
+.btn-block {
+  width: 100%;
+  display: block;
+}
+
+.btn-disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 卡片样式 */
+.card {
+  background-color: #fff;
+  border-radius: 10rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+  margin-bottom: 20rpx;
+  overflow: hidden;
+}
+
+.card-header {
+  padding: 20rpx;
+  border-bottom: 1rpx solid #eee;
+}
+
+.card-body {
+  padding: 20rpx;
+}
+
+.card-footer {
+  padding: 20rpx;
+  border-top: 1rpx solid #eee;
+}
+
+/* 标签样式 */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5rpx 15rpx;
+  border-radius: 30rpx;
+  font-size: 24rpx;
+  margin-right: 10rpx;
+}
+
+.tag-primary {
+  background-color: rgba(0, 120, 215, 0.1);
+  color: #0078d7;
+}
+
+.tag-success {
+  background-color: rgba(46, 204, 113, 0.1);
+  color: #2ecc71;
+}
+
+.tag-danger {
+  background-color: rgba(231, 76, 60, 0.1);
+  color: #e74c3c;
+}
+
+.tag-warning {
+  background-color: rgba(243, 156, 18, 0.1);
+  color: #f39c12;
+}
+
+.tag-info {
+  background-color: rgba(52, 152, 219, 0.1);
+  color: #3498db;
+}
+
+/* 徽章样式 */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36rpx;
+  height: 36rpx;
+  padding: 0 10rpx;
+  border-radius: 18rpx;
+  font-size: 24rpx;
+  color: #fff;
+  background-color: #e74c3c;
+}
+
+/* 加载样式 */
+.loading {
+  display: inline-block;
+  width: 40rpx;
+  height: 40rpx;
+  border: 4rpx solid rgba(0, 120, 215, 0.3);
+  border-radius: 50%;
+  border-top-color: #0078d7;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* 分割线样式 */
+.divider {
+  height: 1rpx;
+  background-color: #eee;
+  margin: 20rpx 0;
+}
+
+.divider-vertical {
+  width: 1rpx;
+  height: 100%;
+  background-color: #eee;
+  margin: 0 20rpx;
+}
+
+/* 列表样式 */
+.list {
+  background-color: #fff;
+}
+
+.list-item {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 30rpx;
+  border-bottom: 1rpx solid #eee;
+}
+
+.list-item:last-child {
+  border-bottom: none;
+}
+
+.list-item-content {
+  flex: 1;
+}
+
+.list-item-extra {
+  margin-left: 20rpx;
+}
+
+/* 网格样式 */
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.grid-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20rpx;
+  box-sizing: border-box;
+}
+
+.grid-item-2 {
+  width: 50%;
+}
+
+.grid-item-3 {
+  width: 33.33%;
+}
+
+.grid-item-4 {
+  width: 25%;
+}
+
+/* 弹窗样式 */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  width: 80%;
+  background-color: #fff;
+  border-radius: 10rpx;
+  overflow: hidden;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  padding: 20rpx 30rpx;
+  border-bottom: 1rpx solid #eee;
+}
+
+.modal-body {
+  padding: 30rpx;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.modal-footer {
+  padding: 20rpx 30rpx;
+  border-top: 1rpx solid #eee;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* 提示框样式 */
+.toast {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  padding: 20rpx 30rpx;
+  border-radius: 10rpx;
+  font-size: 28rpx;
+  z-index: 2000;
+}
+
+/* 进度条样式 */
+.progress {
+  width: 100%;
+  height: 20rpx;
+  background-color: #f1f1f1;
+  border-radius: 10rpx;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background-color: #0078d7;
+  border-radius: 10rpx;
+  transition: width 0.3s ease;
+}
+
+/* 开关样式 */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 100rpx;
+  height: 60rpx;
+}
+
+.switch-input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  border-radius: 34rpx;
+}
+
+.switch-slider:before {
+  position: absolute;
+  content: "";
+  height: 52rpx;
+  width: 52rpx;
+  left: 4rpx;
+  bottom: 4rpx;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+.switch-input:checked + .switch-slider {
+  background-color: #0078d7;
+}
+
+.switch-input:checked + .switch-slider:before {
+  transform: translateX(40rpx);
+}
+
+/* 图标样式 */
+.icon {
+  width: 40rpx;
+  height: 40rpx;
+}
+
+.icon-small {
+  width: 32rpx;
+  height: 32rpx;
+}
+
+.icon-large {
+  width: 48rpx;
+  height: 48rpx;
+}
+
+/* 头像样式 */
+.avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.avatar-small {
+  width: 60rpx;
+  height: 60rpx;
+}
+
+.avatar-large {
+  width: 100rpx;
+  height: 100rpx;
+}
+
+/* 徽章样式 */
+.badge-container {
+  position: relative;
+  display: inline-block;
+}
+
+.badge-dot {
+  position: absolute;
+  top: -5rpx;
+  right: -5rpx;
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+  background-color: #e74c3c;
+}
+
+/* 空状态样式 */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60rpx 0;
+}
+
+.empty-icon {
+  width: 120rpx;
+  height: 120rpx;
+  margin-bottom: 20rpx;
+  opacity: 0.5;
+}
+
+.empty-text {
+  font-size: 28rpx;
+  color: #999;
+}
