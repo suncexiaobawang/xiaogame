@@ -1,0 +1,185 @@
+<!--index.wxml-->
+<view class="container">
+  <!-- 顶部栏 -->
+  <view class="header">
+    <view class="user-info">
+      <block wx:if="{{hasUserInfo}}">
+        <image class="avatar" src="{{userInfo.avatarUrl}}"></image>
+        <text class="nickname">{{userInfo.nickName}}</text>
+      </block>
+      <block wx:else>
+        <image class="avatar" src="/images/default-avatar.png"></image>
+        <button class="login-btn" bindtap="getUserProfile" wx:if="{{canIUseGetUserProfile}}">登录</button>
+        <text class="nickname" wx:else>游客</text>
+      </block>
+    </view>
+    
+    <view class="points-container">
+      <image class="points-icon" src="/images/coin.png"></image>
+      <text class="points">{{points}}</text>
+    </view>
+    
+    <view class="action-buttons">
+      <view class="action-btn" bindtap="openSettings">
+        <image src="/images/settings.png"></image>
+      </view>
+      <view class="action-btn" bindtap="openAchievements">
+        <image src="/images/trophy.png"></image>
+      </view>
+      <view class="action-btn" bindtap="openShop">
+        <image src="/images/shop.png"></image>
+      </view>
+      <view class="action-btn" bindtap="openActivities">
+        <image src="/images/activity.png"></image>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 游戏分类标签 -->
+  <view class="tabs">
+    <view class="tab {{activeTab === 'all' ? 'active' : ''}}" bindtap="switchTab" data-tab="all">全部</view>
+    <view class="tab {{activeTab === 'arcade' ? 'active' : ''}}" bindtap="switchTab" data-tab="arcade">街机</view>
+    <view class="tab {{activeTab === 'puzzle' ? 'active' : ''}}" bindtap="switchTab" data-tab="puzzle">益智</view>
+    <view class="tab {{activeTab === 'action' ? 'active' : ''}}" bindtap="switchTab" data-tab="action">动作</view>
+  </view>
+  
+  <!-- 游戏列表 -->
+  <scroll-view class="games-container" scroll-y="true">
+    <block wx:for="{{games}}" wx:key="id">
+      <view class="game-item" wx:if="{{activeTab === 'all' || item.category === activeTab}}" bindtap="openGame" data-id="{{item.id}}">
+        <image class="game-thumbnail" src="{{item.thumbnail}}"></image>
+        <view class="game-info">
+          <view class="game-name">{{item.name}}</view>
+          <view class="game-desc">{{item.description}}</view>
+          <view class="game-meta">
+            <text class="game-difficulty">难度: {{item.difficulty === 'easy' ? '简单' : (item.difficulty === 'medium' ? '中等' : '困难')}}</text>
+            <text class="game-time">{{item.estimatedTime}}</text>
+          </view>
+        </view>
+        <view class="game-status">
+          <block wx:if="{{unlockedGames.includes(item.id)}}">
+            <view class="game-unlocked">已解锁</view>
+          </block>
+          <block wx:else>
+            <view class="game-locked">
+              <image src="/images/lock.png"></image>
+              <text>{{item.unlockPoints}}</text>
+            </view>
+          </block>
+        </view>
+      </view>
+    </block>
+  </scroll-view>
+  
+  <!-- 设置弹窗 -->
+  <view class="modal" wx:if="{{showSettings}}">
+    <view class="modal-content">
+      <view class="modal-header">
+        <text class="modal-title">设置</text>
+        <view class="modal-close" bindtap="closeSettings">×</view>
+      </view>
+      <view class="modal-body">
+        <view class="setting-item">
+          <text>背景音乐</text>
+          <switch checked="{{settings.bgmEnabled}}" bindchange="toggleBGM"></switch>
+        </view>
+        <view class="setting-item">
+          <text>音效</text>
+          <switch checked="{{settings.soundEnabled}}" bindchange="toggleSound"></switch>
+        </view>
+        <view class="setting-item">
+          <text>振动</text>
+          <switch checked="{{settings.vibrationEnabled}}" bindchange="toggleVibration"></switch>
+        </view>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 成就弹窗 -->
+  <view class="modal" wx:if="{{showAchievements}}">
+    <view class="modal-content">
+      <view class="modal-header">
+        <text class="modal-title">成就</text>
+        <view class="modal-close" bindtap="closeAchievements">×</view>
+      </view>
+      <view class="modal-body">
+        <scroll-view class="achievements-list" scroll-y="true">
+          <block wx:for="{{achievements}}" wx:key="id">
+            <view class="achievement-item {{achievements.includes(item.id) ? 'unlocked' : ''}}">
+              <image class="achievement-icon" src="{{item.icon}}"></image>
+              <view class="achievement-info">
+                <text class="achievement-name">{{item.name}}</text>
+                <text class="achievement-desc">{{item.description}}</text>
+                <text class="achievement-points">+{{item.points}} 积分</text>
+              </view>
+              <view class="achievement-status">
+                <image src="{{achievements.includes(item.id) ? '/images/check.png' : '/images/lock.png'}}"></image>
+              </view>
+            </view>
+          </block>
+        </scroll-view>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 商店弹窗 -->
+  <view class="modal" wx:if="{{showShop}}">
+    <view class="modal-content">
+      <view class="modal-header">
+        <text class="modal-title">商店</text>
+        <view class="modal-close" bindtap="closeShop">×</view>
+      </view>
+      <view class="modal-body">
+        <view class="shop-points">
+          <text>当前积分: {{points}}</text>
+        </view>
+        <scroll-view class="shop-items" scroll-y="true">
+          <block wx:for="{{shopItems}}" wx:key="id">
+            <view class="shop-item" bindtap="buyItem" data-id="{{item.id}}">
+              <image class="shop-item-icon" src="{{item.icon}}"></image>
+              <view class="shop-item-info">
+                <text class="shop-item-name">{{item.name}}</text>
+                <text class="shop-item-desc">{{item.description}}</text>
+              </view>
+              <view class="shop-item-price">
+                <image src="/images/coin.png"></image>
+                <text>{{item.price}}</text>
+              </view>
+            </view>
+          </block>
+        </scroll-view>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 活动弹窗 -->
+  <view class="modal" wx:if="{{showActivities}}">
+    <view class="modal-content">
+      <view class="modal-header">
+        <text class="modal-title">活动</text>
+        <view class="modal-close" bindtap="closeActivities">×</view>
+      </view>
+      <view class="modal-body">
+        <scroll-view class="activities-list" scroll-y="true">
+          <block wx:for="{{activities}}" wx:key="id">
+            <view class="activity-item">
+              <view class="activity-info">
+                <text class="activity-name">{{item.name}}</text>
+                <text class="activity-desc">{{item.description}}</text>
+                <text class="activity-date">{{item.startDate}} 至 {{item.endDate}}</text>
+              </view>
+              <view class="activity-reward">
+                <block wx:if="{{item.multiplier > 1}}">
+                  <text>{{item.multiplier}}倍积分</text>
+                </block>
+                <block wx:if="{{item.reward > 0}}">
+                  <text>+{{item.reward}} 积分</text>
+                </block>
+              </view>
+            </view>
+          </block>
+        </scroll-view>
+      </view>
+    </view>
+  </view>
+</view>
