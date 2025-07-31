@@ -1,0 +1,27 @@
+<!-- game.wxml -->
+<view class="container">
+  <!-- 加载界面 -->
+  <view class="loading-container" wx:if="{{isLoading}}">
+    <view class="loading-content">
+      <image class="loading-logo" src="../../images/logo.png" mode="aspectFit"></image>
+      <view class="loading-text">{{loadingText}}</view>
+      <view class="loading-progress-container">
+        <view class="loading-progress-bar">
+          <view class="loading-progress-fill" style="width: {{loadingProgress}}%"></view>
+        </view>
+        <view class="loading-progress-text">{{loadingProgress}}%</view>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 游戏界面 -->
+  <view class="game-container" wx:if="{{showGameUI}}">
+    <!-- 游戏画布 -->
+    <canvas type="2d" id="gameCanvas" class="game-canvas"></canvas>
+    
+    <!-- 返回按钮 -->
+    <view class="back-button" bindtap="onBackTap">
+      <image src="../../images/back.png" mode="aspectFit"></image>
+    </view>
+  </view>
+</view>
