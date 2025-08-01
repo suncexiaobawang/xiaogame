@@ -42,198 +42,262 @@ module.exports = {
   games: [
     {
       id: 'game1',
-      name: '弹球游戏',
-      description: '经典的弹球游戏，控制挡板反弹小球击碎砖块',
+      name: '新三国英杰传',
+      description: '三国题材的卡牌收集与回合制战斗游戏，组建你的英雄阵容征战天下',
       icon: 'images/game1_icon.png',
       thumbnail: 'images/game1_thumbnail.jpg',
       package: 'game1',
       unlockPoints: 0,
-      maxScore: 1000,
-      pointsPerPlay: 5,
-      pointsPerWin: 20,
-      achievements: [
-        {
-          id: 'game1_score_100',
-          name: '初级弹球手',
-          description: '在弹球游戏中获得100分',
-          points: 10,
-          condition: { type: 'score', value: 100 }
-        },
-        {
-          id: 'game1_score_500',
-          name: '中级弹球手',
-          description: '在弹球游戏中获得500分',
-          points: 30,
-          condition: { type: 'score', value: 500 }
-        },
-        {
-          id: 'game1_score_1000',
-          name: '高级弹球手',
-          description: '在弹球游戏中获得1000分',
-          points: 50,
-          condition: { type: 'score', value: 1000 }
-        },
-        {
-          id: 'game1_perfect',
-          name: '完美通关',
-          description: '不损失生命的情况下完成一局游戏',
-          points: 100,
-          condition: { type: 'perfect', value: true }
-        }
-      ]
+      category: '策略',
+      difficulty: '中等',
+      estimatedTime: '5-10分钟',
+      highscoreEnabled: true,
+      multiplayerEnabled: false,
+      rankingEnabled: true
     },
     {
       id: 'game2',
       name: '记忆配对',
-      description: '考验记忆力的卡片配对游戏，翻开所有配对的卡片获胜',
+      description: '考验记忆力的卡片配对游戏，翻开卡片找到相同的图案',
       icon: 'images/game2_icon.png',
       thumbnail: 'images/game2_thumbnail.jpg',
       package: 'game2',
       unlockPoints: 100,
-      maxScore: 1000,
-      pointsPerPlay: 5,
-      pointsPerWin: 20,
-      achievements: [
-        {
-          id: 'game2_win_1',
-          name: '初级记忆师',
-          description: '完成一局记忆配对游戏',
-          points: 10,
-          condition: { type: 'wins', value: 1 }
-        },
-        {
-          id: 'game2_win_5',
-          name: '中级记忆师',
-          description: '完成5局记忆配对游戏',
-          points: 30,
-          condition: { type: 'wins', value: 5 }
-        },
-        {
-          id: 'game2_win_10',
-          name: '高级记忆师',
-          description: '完成10局记忆配对游戏',
-          points: 50,
-          condition: { type: 'wins', value: 10 }
-        },
-        {
-          id: 'game2_fast',
-          name: '闪电记忆',
-          description: '在30秒内完成一局游戏',
-          points: 100,
-          condition: { type: 'time', value: 30 }
-        }
-      ]
+      category: '益智',
+      difficulty: '中等',
+      estimatedTime: '2-4分钟',
+      highscoreEnabled: true,
+      multiplayerEnabled: false,
+      rankingEnabled: true
     },
     {
       id: 'game3',
       name: '飞机大战',
-      description: '经典的飞机射击游戏，躲避敌机并射击获得高分',
+      description: '控制飞机躲避障碍物并射击敌人的射击游戏',
       icon: 'images/game3_icon.png',
       thumbnail: 'images/game3_thumbnail.jpg',
       package: 'game3',
       unlockPoints: 300,
-      maxScore: 10000,
-      pointsPerPlay: 5,
-      pointsPerWin: 20,
-      achievements: [
-        {
-          id: 'game3_score_1000',
-          name: '初级飞行员',
-          description: '在飞机大战中获得1000分',
-          points: 10,
-          condition: { type: 'score', value: 1000 }
-        },
-        {
-          id: 'game3_score_5000',
-          name: '中级飞行员',
-          description: '在飞机大战中获得5000分',
-          points: 30,
-          condition: { type: 'score', value: 5000 }
-        },
-        {
-          id: 'game3_score_10000',
-          name: '王牌飞行员',
-          description: '在飞机大战中获得10000分',
-          points: 50,
-          condition: { type: 'score', value: 10000 }
-        },
-        {
-          id: 'game3_boss',
-          name: '击败Boss',
-          description: '成功击败一个Boss',
-          points: 100,
-          condition: { type: 'boss', value: true }
-        }
-      ]
+      category: '动作',
+      difficulty: '困难',
+      estimatedTime: '5-8分钟',
+      highscoreEnabled: true,
+      multiplayerEnabled: false,
+      rankingEnabled: true
     }
   ],
   
-  // 商店配置
+  // 成就系统配置
+  achievements: [
+    {
+      id: 'first_game',
+      name: '初次体验',
+      description: '完成第一局游戏',
+      icon: 'images/achievement_first_game.png',
+      points: 10,
+      hidden: false
+    },
+    {
+      id: 'all_games',
+      name: '全能玩家',
+      description: '尝试所有游戏至少一次',
+      icon: 'images/achievement_all_games.png',
+      points: 50,
+      hidden: false
+    },
+    {
+      id: 'high_score',
+      name: '高分达人',
+      description: '在任意游戏中获得超过1000分',
+      icon: 'images/achievement_high_score.png',
+      points: 30,
+      hidden: false
+    },
+    {
+      id: 'daily_player',
+      name: '日常玩家',
+      description: '连续7天登录游戏',
+      icon: 'images/achievement_daily_player.png',
+      points: 70,
+      hidden: false
+    },
+    {
+      id: 'secret_game',
+      name: '彩蛋发现者',
+      description: '发现隐藏的彩蛋游戏',
+      icon: 'images/achievement_secret.png',
+      points: 100,
+      hidden: true
+    }
+  ],
+  
+  // 商店系统配置
   shop: {
-    // 商店物品
+    enabled: true,
+    categories: [
+      {
+        id: 'themes',
+        name: '主题',
+        description: '更换游戏界面主题'
+      },
+      {
+        id: 'powerups',
+        name: '道具',
+        description: '游戏中使用的特殊道具'
+      },
+      {
+        id: 'characters',
+        name: '角色',
+        description: '游戏中的可选角色'
+      }
+    ],
     items: [
       {
         id: 'theme_dark',
         name: '暗黑主题',
-        description: '应用暗黑主题到游戏界面',
+        description: '酷炫的暗黑界面主题',
+        category: 'themes',
         price: 200,
-        type: 'theme',
-        icon: 'images/shop/theme_dark.png'
+        icon: 'images/shop_theme_dark.png',
+        previewImage: 'images/preview_theme_dark.jpg'
       },
       {
-        id: 'theme_neon',
-        name: '霓虹主题',
-        description: '应用霓虹主题到游戏界面',
-        price: 300,
-        type: 'theme',
-        icon: 'images/shop/theme_neon.png'
-      },
-      {
-        id: 'avatar_frame_gold',
-        name: '金色头像框',
-        description: '为你的头像添加金色边框',
-        price: 500,
-        type: 'avatar_frame',
-        icon: 'images/shop/avatar_frame_gold.png'
-      },
-      {
-        id: 'game1_skin_rainbow',
-        name: '彩虹球皮肤',
-        description: '为弹球游戏中的球应用彩虹皮肤',
+        id: 'powerup_shield',
+        name: '护盾道具',
+        description: '在游戏中提供10秒无敌时间',
+        category: 'powerups',
         price: 150,
-        type: 'game_skin',
-        gameId: 'game1',
-        icon: 'images/shop/game1_skin_rainbow.png'
+        icon: 'images/shop_powerup_shield.png',
+        usageLimit: 3
       },
       {
-        id: 'game3_skin_fire',
-        name: '火焰飞机皮肤',
-        description: '为飞机大战中的飞机应用火焰皮肤',
-        price: 250,
-        type: 'game_skin',
-        gameId: 'game3',
-        icon: 'images/shop/game3_skin_fire.png'
+        id: 'character_ninja',
+        name: '忍者角色',
+        description: '速度更快的特殊角色',
+        category: 'characters',
+        price: 500,
+        icon: 'images/shop_character_ninja.png',
+        previewImage: 'images/preview_character_ninja.jpg'
       }
     ]
   },
   
-  // 活动配置
-  events: [
-    {
-      id: 'double_points',
-      name: '双倍积分',
-      description: '限时双倍积分活动',
-      startTime: '2023-01-01T00:00:00Z',
-      endTime: '2023-01-07T23:59:59Z',
-      effect: { type: 'points_multiplier', value: 2 }
+  // 活动系统配置
+  events: {
+    enabled: true,
+    current: [
+      {
+        id: 'summer_event',
+        name: '夏日狂欢',
+        description: '夏日限定活动，完成特定任务获得额外奖励',
+        startDate: '2023-07-01',
+        endDate: '2023-08-31',
+        icon: 'images/event_summer.png',
+        tasks: [
+          {
+            id: 'summer_task1',
+            name: '炎炎夏日',
+            description: '在夏日活动期间累计游戏30分钟',
+            reward: 50,
+            progress: 0,
+            maxProgress: 1800 // 秒
+          },
+          {
+            id: 'summer_task2',
+            name: '分享快乐',
+            description: '在活动期间分享游戏3次',
+            reward: 30,
+            progress: 0,
+            maxProgress: 3
+          }
+        ],
+        specialRewards: [
+          {
+            id: 'summer_theme',
+            name: '夏日主题',
+            description: '限定夏日主题界面',
+            type: 'theme',
+            requiredTasks: 2 // 需要完成的任务数
+          }
+        ]
+      }
+    ]
+  },
+  
+  // 社交系统配置
+  social: {
+    enabled: true,
+    features: [
+      {
+        id: 'friends',
+        name: '好友系统',
+        description: '添加好友并查看他们的游戏进度',
+        enabled: true
+      },
+      {
+        id: 'rankings',
+        name: '排行榜',
+        description: '查看全球玩家排名',
+        enabled: true,
+        categories: ['总积分', '单局最高', '每日挑战']
+      },
+      {
+        id: 'challenges',
+        name: '好友挑战',
+        description: '向好友发起游戏挑战',
+        enabled: true
+      },
+      {
+        id: 'sharing',
+        name: '分享功能',
+        description: '分享游戏成绩到朋友圈',
+        enabled: true
+      }
+    ]
+  },
+  
+  // 云开发配置
+  cloud: {
+    env: 'cloud-env-id', // 替换为实际的云环境ID
+    collections: {
+      users: 'users',
+      scores: 'game_scores',
+      achievements: 'user_achievements',
+      purchases: 'user_purchases',
+      events: 'user_events',
+      feedback: 'user_feedback'
     },
-    {
-      id: 'discount_shop',
-      name: '商店折扣',
-      description: '商店物品限时7折',
-      startTime: '2023-02-01T00:00:00Z',
-      endTime: '2023-02-07T23:59:59Z',
-      effect: { type: 'shop_discount', value: 0.7 }
+    functions: {
+      login: 'user_login',
+      updateScore: 'update_score',
+      getRanking: 'get_ranking',
+      unlockAchievement: 'unlock_achievement',
+      purchaseItem: 'purchase_item',
+      completeEventTask: 'complete_event_task'
     }
-  ]
+  },
+  
+  // 系统配置
+  system: {
+    // 最大缓存大小（MB）
+    maxCacheSize: 50,
+    // 资源预加载
+    preloadResources: true,
+    // 自动保存间隔（秒）
+    autoSaveInterval: 60,
+    // 调试模式
+    debugMode: false,
+    // 错误报告
+    errorReporting: true,
+    // 性能监控
+    performanceMonitoring: true,
+    // 网络超时（毫秒）
+    networkTimeout: 10000,
+    // 最大重试次数
+    maxRetries: 3,
+    // 重试间隔（毫秒）
+    retryInterval: 1000,
+    // 加载超时（毫秒）
+    loadingTimeout: 15000
+  }
 };
