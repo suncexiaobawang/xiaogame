@@ -108,174 +108,213 @@ class RankingRenderer {
     wx.onMessage(message => {
       console.log('开放数据域收到消息:', message)
       
-      switch (message.event) {
-        case 'showRanking':
-          this.showRanking(message.gameId, message.rankType, message.timeRange)
-          break
-        case 'prevPage':
-          this.prevPage()
-          break
-        case 'nextPage':
-          this.nextPage()
-          break
-        case 'close':
-          this.clear()
-          break
+      if (!message) return
+      
+      const { event, data } = message
+      
+      switch (event) {
         case 'updateViewPort':
-          canvasWidth = message.width
-          canvasHeight = message.height
+          // 更新视图大小
+          canvasWidth = data.width
+          canvasHeight = data.height
           this.render()
           break
+          
+        case 'showRanking':
+          // 显示排行榜
+          this.gameId = data.gameId || ''
+          this.rankType = data.rankType || 'score'
+          this.timeRange = data.timeRange || 'all'
+          this.loadRankingData()
+          break
+          
+        case 'nextPage':
+          // 下一页
+          if (this.currentPage < this.totalPages - 1) {
+            this.currentPage++
+            this.render()
+          }
+          break
+          
+        case 'prevPage':
+          // 上一页
+          if (this.currentPage > 0) {
+            this.currentPage--
+            this.render()
+          }
+          break
+          
+        default:
+          console.warn('未知的消息事件:', event)
       }
     })
   }
   
-  // 显示排行榜
-  async showRanking(gameId, rankType = 'score', timeRange = 'all') {
-    this.gameId = gameId
-    this.rankType = rankType
-    this.timeRange = timeRange
+  // 加载排行榜数据
+  loadRankingData() {
+    // 根据游戏ID和排行类型获取对应的排行榜
+    let rankKey = `${this.gameId}_${this.rankType}`
+    if (this.timeRange !== 'all') {
+      rankKey += `_${this.timeRange}`
+    }
+    
+    // 获取好友排行榜
+    wx.getFriendCloudStorage({
+      keyList: [rankKey],
+      success: res => {
+        console.log('获取排行榜数据成功:', res)
+        
+        // 处理排行榜数据
+        this.processRankingData(res.data, rankKey)
+        
+        // 获取自己的排名
+        this.loadSelfRankingData(rankKey)
+      },
+      fail: err => {
+        console.error('获取排行榜数据失败:', err)
+        this.showError('获取排行榜失败')
+      }
+    })
+  }
+  
+  // 处理排行榜数据
+  processRankingData(data, rankKey) {
+    // 提取并排序数据
+    this.rankingData = data
+      .map(item => {
+        // 查找对应的KV数据
+        const kvData = item.KVDataList.find(kv => kv.key === rankKey)
+        
+        if (!kvData) return null
+        
+        // 解析分数
+        let score = 0
+        try {
+          const scoreData = JSON.parse(kvData.value)
+          score = this.rankType === 'time' ? scoreData.time : scoreData.score
+        } catch (e) {
+          console.error('解析分数数据失败:', e)
+          score = 0
+        }
+        
+        return {
+          openid: item.openid,
+          nickname: item.nickname,
+          avatarUrl: item.avatarUrl,
+          score: score
+        }
+      })
+      .filter(item => item !== null)
+      
+    // 根据分数排序
+    if (this.rankType === 'time') {
+      // 时间类型，小的在前
+      this.rankingData.sort((a, b) => a.score - b.score)
+    } else {
+      // 分数类型，大的在前
+      this.rankingData.sort((a, b) => b.score - a.score)
+    }
+    
+    // 计算总页数
+    this.totalPages = Math.ceil(this.rankingData.length / this.pageSize) || 1
     this.currentPage = 0
     
-    await this.fetchRankingData()
+    // 渲染排行榜
     this.render()
   }
   
-  // 获取排行榜数据
-  async fetchRankingData() {
-    try {
-      // 获取好友数据
-      let friendRankData = await this.getFriendRankData()
-      
-      // 获取自己的数据
-      const selfData = await this.getSelfData()
-      
-      // 处理数据
-      this.rankingData = friendRankData
-      this.selfData = selfData
-      this.totalPages = Math.ceil(this.rankingData.length / this.pageSize)
-      
-      console.log('排行榜数据获取成功', {
-        total: this.rankingData.length,
-        pages: this.totalPages,
-        self: this.selfData
-      })
-    } catch (error) {
-      console.error('获取排行榜数据失败', error)
-    }
-  }
-  
-  // 获取好友排行数据
-  async getFriendRankData() {
-    return new Promise((resolve, reject) => {
-      wx.getFriendCloudStorage({
-        keyList: [`${this.gameId}_${this.rankType}`],
-        success: res => {
-          console.log('获取好友数据成功', res)
-          
-          // 处理数据
-          const rankData = res.data.map(friend => {
-            const scoreKey = `${this.gameId}_${this.rankType}`
-            const scoreData = friend.KVDataList.find(item => item.key === scoreKey)
-            const score = scoreData ? parseInt(scoreData.value) : 0
-            
-            return {
-              openid: friend.openid,
-              nickname: friend.nickname,
-              avatarUrl: friend.avatarUrl,
-              score: score
-            }
-          })
-          
-          // 排序
-          if (this.rankType === 'score') {
-            rankData.sort((a, b) => b.score - a.score)
-          } else {
-            rankData.sort((a, b) => a.score - b.score) // 时间越短越好
+  // 加载自己的排名数据
+  loadSelfRankingData(rankKey) {
+    wx.getUserCloudStorage({
+      keyList: [rankKey],
+      success: res => {
+        console.log('获取自己的排名数据成功:', res)
+        
+        // 查找对应的KV数据
+        const kvData = res.KVDataList.find(kv => kv.key === rankKey)
+        
+        if (kvData) {
+          // 解析分数
+          let score = 0
+          try {
+            const scoreData = JSON.parse(kvData.value)
+            score = this.rankType === 'time' ? scoreData.time : scoreData.score
+          } catch (e) {
+            console.error('解析分数数据失败:', e)
+            score = 0
           }
           
-          // 添加排名
-          rankData.forEach((item, index) => {
-            item.rank = index + 1
+          // 获取自己的基本信息
+          wx.getUserInfo({
+            openIdList: ['selfOpenId'],
+            success: userRes => {
+              const userInfo = userRes.data[0]
+              
+              this.selfData = {
+                openid: userInfo.openId,
+                nickname: userInfo.nickName,
+                avatarUrl: userInfo.avatarUrl,
+                score: score
+              }
+              
+              // 查找自己的排名
+              const selfRank = this.rankingData.findIndex(item => item.openid === this.selfData.openid)
+              if (selfRank !== -1) {
+                this.selfData.rank = selfRank + 1
+              } else {
+                this.selfData.rank = '未上榜'
+              }
+              
+              this.render()
+            }
           })
-          
-          resolve(rankData)
-        },
-        fail: err => {
-          console.error('获取好友数据失败', err)
-          reject(err)
         }
-      })
+      },
+      fail: err => {
+        console.error('获取自己的排名数据失败:', err)
+      }
     })
-  }
-  
-  // 获取自己的数据
-  async getSelfData() {
-    return new Promise((resolve, reject) => {
-      wx.getUserCloudStorage({
-        keyList: [`${this.gameId}_${this.rankType}`],
-        success: res => {
-          console.log('获取自己数据成功', res)
-          
-          const scoreKey = `${this.gameId}_${this.rankType}`
-          const scoreData = res.KVDataList.find(item => item.key === scoreKey)
-          const score = scoreData ? parseInt(scoreData.value) : 0
-          
-          // 查找自己在排行榜中的位置
-          const selfIndex = this.rankingData.findIndex(item => item.openid === wx.getOpenDataContext().selfOpenId)
-          const rank = selfIndex !== -1 ? selfIndex + 1 : -1
-          
-          resolve({
-            score,
-            rank
-          })
-        },
-        fail: err => {
-          console.error('获取自己数据失败', err)
-          reject(err)
-        }
-      })
-    })
-  }
-  
-  // 上一页
-  prevPage() {
-    if (this.currentPage > 0) {
-      this.currentPage--
-      this.render()
-    }
-  }
-  
-  // 下一页
-  nextPage() {
-    if (this.currentPage < this.totalPages - 1) {
-      this.currentPage++
-      this.render()
-    }
-  }
-  
-  // 清空画布
-  clear() {
-    context.clearRect(0, 0, canvasWidth, canvasHeight)
   }
   
   // 渲染排行榜
   render() {
     if (!canvasWidth || !canvasHeight) return
     
-    this.clear()
+    // 清空画布
+    context.clearRect(0, 0, canvasWidth, canvasHeight)
     
     // 绘制背景
-    const bgImg = this.resourceLoader.get('rankBg')
-    if (bgImg) {
-      context.drawImage(bgImg, 0, 0, canvasWidth, canvasHeight)
-    } else {
-      // 默认背景
-      context.fillStyle = 'rgba(0, 0, 0, 0.7)'
-      context.fillRect(0, 0, canvasWidth, canvasHeight)
-    }
+    this.drawBackground()
     
     // 绘制标题
+    this.drawTitle()
+    
+    // 绘制排行榜列表
+    this.drawRankingList()
+    
+    // 绘制分页控制
+    this.drawPagination()
+    
+    // 绘制自己的排名
+    if (this.selfData) {
+      this.drawSelfRanking()
+    }
+  }
+  
+  // 绘制背景
+  drawBackground() {
+    const bgImage = this.resourceLoader.get('rankBg')
+    if (bgImage) {
+      context.drawImage(bgImage, 0, 0, canvasWidth, canvasHeight)
+    } else {
+      // 默认背景
+      context.fillStyle = 'rgba(0, 0, 0, 0.6)'
+      context.fillRect(0, 0, canvasWidth, canvasHeight)
+    }
+  }
+  
+  // 绘制标题
+  drawTitle() {
     context.fillStyle = '#ffffff'
     context.font = 'bold 20px Arial'
     context.textAlign = 'center'
@@ -283,197 +322,244 @@ class RankingRenderer {
     let title = '好友排行榜'
     if (this.gameId) {
       const gameNames = {
-        'game1': '弹球游戏',
-        'game2': '记忆配对',
+        'game1': '贪吃蛇',
+        'game2': '2048',
         'game3': '飞机大战'
       }
-      title = (gameNames[this.gameId] || '游戏') + '排行榜'
+      title = `${gameNames[this.gameId] || '游戏'}排行榜`
     }
     
     context.fillText(title, canvasWidth / 2, 40)
+  }
+  
+  // 绘制排行榜列表
+  drawRankingList() {
+    const startIndex = this.currentPage * this.pageSize
+    const endIndex = Math.min(startIndex + this.pageSize, this.rankingData.length)
     
-    // 绘制排行类型
-    const typeText = this.rankType === 'score' ? '得分排行' : '时间排行'
-    const rangeTexts = {
-      'all': '全部',
-      'day': '今日',
-      'week': '本周',
-      'month': '本月'
-    }
-    const subTitle = `${rangeTexts[this.timeRange]}${typeText}`
-    
-    context.font = '16px Arial'
-    context.fillText(subTitle, canvasWidth / 2, 65)
-    
-    // 没有数据
     if (this.rankingData.length === 0) {
+      // 没有数据
+      context.fillStyle = '#ffffff'
+      context.font = '16px Arial'
+      context.textAlign = 'center'
       context.fillText('暂无排行数据', canvasWidth / 2, canvasHeight / 2)
       return
     }
     
-    // 计算当前页的数据
-    const startIndex = this.currentPage * this.pageSize
-    const endIndex = Math.min(startIndex + this.pageSize, this.rankingData.length)
-    const currentPageData = this.rankingData.slice(startIndex, endIndex)
-    
-    // 绘制列表
-    const itemHeight = 70
-    const startY = 90
-    
     // 绘制表头
-    context.fillStyle = '#cccccc'
-    context.font = '14px Arial'
+    context.fillStyle = '#ffffff'
+    context.font = 'bold 16px Arial'
     context.textAlign = 'left'
-    context.fillText('排名', 50, startY)
-    context.fillText('头像', 100, startY)
-    context.fillText('昵称', 180, startY)
-    context.fillText(this.rankType === 'score' ? '分数' : '用时', 300, startY)
+    context.fillText('排名', 50, 80)
+    context.fillText('头像', 120, 80)
+    context.fillText('昵称', 220, 80)
+    context.fillText(this.rankType === 'time' ? '用时' : '分数', 320, 80)
     
     // 绘制分割线
-    context.strokeStyle = '#cccccc'
+    context.strokeStyle = '#ffffff'
     context.lineWidth = 1
     context.beginPath()
-    context.moveTo(30, startY + 10)
-    context.lineTo(canvasWidth - 30, startY + 10)
+    context.moveTo(30, 90)
+    context.lineTo(canvasWidth - 30, 90)
     context.stroke()
     
     // 绘制列表项
-    currentPageData.forEach((item, index) => {
-      const y = startY + 30 + index * itemHeight
+    for (let i = startIndex; i < endIndex; i++) {
+      const item = this.rankingData[i]
+      const y = 130 + (i - startIndex) * 60
       
       // 绘制排名
+      context.fillStyle = '#ffffff'
+      context.font = 'bold 18px Arial'
       context.textAlign = 'center'
-      const rank = startIndex + index + 1
       
-      // 特殊排名图标
-      if (rank <= 3) {
-        const rankIcons = [
-          this.resourceLoader.get('firstRank'),
-          this.resourceLoader.get('secondRank'),
-          this.resourceLoader.get('thirdRank')
-        ]
+      if (i < 3) {
+        // 前三名使用图标
+        const rankImages = [this.resourceLoader.get('firstRank'), this.resourceLoader.get('secondRank'), this.resourceLoader.get('thirdRank')]
+        const rankImage = rankImages[i]
         
-        const rankIcon = rankIcons[rank - 1]
-        if (rankIcon) {
-          context.drawImage(rankIcon, 40, y - 15, 30, 30)
+        if (rankImage) {
+          context.drawImage(rankImage, 40, y - 25, 30, 30)
         } else {
-          context.fillStyle = '#ffcc00'
-          context.font = 'bold 18px Arial'
-          context.fillText(rank, 50, y)
+          context.fillText(i + 1, 50, y)
         }
       } else {
-        context.fillStyle = '#ffffff'
-        context.font = '16px Arial'
-        context.fillText(rank, 50, y)
+        context.fillText(i + 1, 50, y)
       }
       
       // 绘制头像
-      const avatar = this.resourceLoader.get('defaultAvatar')
-      if (avatar) {
-        context.save()
-        context.beginPath()
-        context.arc(100, y, 20, 0, Math.PI * 2)
-        context.clip()
-        context.drawImage(avatar, 80, y - 20, 40, 40)
-        context.restore()
+      const defaultAvatar = this.resourceLoader.get('defaultAvatar')
+      if (item.avatarUrl) {
+        // 加载玩家头像
+        const avatar = wx.createImage()
+        avatar.src = item.avatarUrl
+        avatar.onload = () => {
+          // 绘制圆形头像
+          context.save()
+          context.beginPath()
+          context.arc(120, y - 10, 20, 0, Math.PI * 2, false)
+          context.clip()
+          context.drawImage(avatar, 100, y - 30, 40, 40)
+          context.restore()
+        }
+        avatar.onerror = () => {
+          // 使用默认头像
+          if (defaultAvatar) {
+            context.drawImage(defaultAvatar, 100, y - 30, 40, 40)
+          }
+        }
+      } else if (defaultAvatar) {
+        context.drawImage(defaultAvatar, 100, y - 30, 40, 40)
       }
       
       // 绘制昵称
-      context.textAlign = 'left'
       context.fillStyle = '#ffffff'
       context.font = '16px Arial'
-      
-      // 昵称截断
-      let nickname = item.nickname || '未知玩家'
-      if (nickname.length > 10) {
-        nickname = nickname.substring(0, 10) + '...'
+      context.textAlign = 'left'
+      const nickname = item.nickname || '未知玩家'
+      // 昵称过长时截断
+      const maxWidth = 100
+      if (context.measureText(nickname).width > maxWidth) {
+        let shortName = ''
+        for (let j = 0; j < nickname.length; j++) {
+          shortName += nickname[j]
+          if (context.measureText(shortName + '...').width > maxWidth) {
+            shortName = shortName.slice(0, -1) + '...'
+            break
+          }
+        }
+        context.fillText(shortName, 180, y)
+      } else {
+        context.fillText(nickname, 180, y)
       }
-      
-      context.fillText(nickname, 140, y)
       
       // 绘制分数
-      context.textAlign = 'right'
-      context.fillStyle = '#ffcc00'
-      context.font = 'bold 16px Arial'
-      
-      if (this.rankType === 'score') {
-        context.fillText(item.score, canvasWidth - 50, y)
-      } else {
-        // 时间格式化
-        const minutes = Math.floor(item.score / 60)
-        const seconds = item.score % 60
-        const timeText = `${minutes}:${seconds.toString().padStart(2, '0')}`
-        context.fillText(timeText, canvasWidth - 50, y)
-      }
-      
-      // 高亮自己
-      if (item.openid === wx.getOpenDataContext().selfOpenId) {
-        context.strokeStyle = '#ffcc00'
-        context.lineWidth = 2
-        context.strokeRect(30, y - 25, canvasWidth - 60, itemHeight - 10)
-      }
-    })
-    
-    // 绘制分页
-    if (this.totalPages > 1) {
-      context.textAlign = 'center'
-      context.fillStyle = '#ffffff'
-      context.font = '14px Arial'
-      context.fillText(`${this.currentPage + 1}/${this.totalPages}`, canvasWidth / 2, canvasHeight - 30)
-      
-      // 上一页按钮
-      const prevBtn = this.resourceLoader.get('prevBtn')
-      if (prevBtn && this.currentPage > 0) {
-        context.drawImage(prevBtn, canvasWidth / 2 - 80, canvasHeight - 45, 30, 30)
-      }
-      
-      // 下一页按钮
-      const nextBtn = this.resourceLoader.get('nextBtn')
-      if (nextBtn && this.currentPage < this.totalPages - 1) {
-        context.drawImage(nextBtn, canvasWidth / 2 + 50, canvasHeight - 45, 30, 30)
-      }
-    }
-    
-    // 绘制自己的排名信息
-    if (this.selfData) {
-      const selfY = canvasHeight - 70
-      
-      context.fillStyle = 'rgba(0, 0, 0, 0.5)'
-      context.fillRect(0, selfY - 25, canvasWidth, 60)
-      
-      context.textAlign = 'left'
-      context.fillStyle = '#ffffff'
-      context.font = '16px Arial'
-      context.fillText('我的排名:', 50, selfY)
-      
-      context.textAlign = 'center'
       context.fillStyle = '#ffcc00'
       context.font = 'bold 18px Arial'
-      
-      const rankText = this.selfData.rank > 0 ? this.selfData.rank : '未上榜'
-      context.fillText(rankText, 150, selfY)
-      
       context.textAlign = 'left'
-      context.fillStyle = '#ffffff'
-      context.font = '16px Arial'
-      context.fillText(this.rankType === 'score' ? '我的分数:' : '我的用时:', 200, selfY)
       
-      context.textAlign = 'center'
-      context.fillStyle = '#ffcc00'
-      context.font = 'bold 18px Arial'
-      
-      if (this.rankType === 'score') {
-        context.fillText(this.selfData.score, 300, selfY)
-      } else {
+      if (this.rankType === 'time') {
         // 时间格式化
-        const minutes = Math.floor(this.selfData.score / 60)
-        const seconds = this.selfData.score % 60
-        const timeText = `${minutes}:${seconds.toString().padStart(2, '0')}`
-        context.fillText(timeText, 300, selfY)
+        const time = item.score
+        const minutes = Math.floor(time / 60)
+        const seconds = time % 60
+        const timeText = `${minutes}:${seconds < 10 ? '0' + seconds : seconds}`
+        context.fillText(timeText, 320, y)
+      } else {
+        context.fillText(item.score, 320, y)
       }
     }
   }
+  
+  // 绘制分页控制
+  drawPagination() {
+    if (this.totalPages <= 1) return
+    
+    const y = canvasHeight - 50
+    
+    // 绘制页码信息
+    context.fillStyle = '#ffffff'
+    context.font = '14px Arial'
+    context.textAlign = 'center'
+    context.fillText(`${this.currentPage + 1}/${this.totalPages}`, canvasWidth / 2, y)
+    
+    // 绘制上一页按钮
+    const prevBtn = this.resourceLoader.get('prevBtn')
+    if (prevBtn && this.currentPage > 0) {
+      context.drawImage(prevBtn, canvasWidth / 2 - 80, y - 15, 30, 30)
+    }
+    
+    // 绘制下一页按钮
+    const nextBtn = this.resourceLoader.get('nextBtn')
+    if (nextBtn && this.currentPage < this.totalPages - 1) {
+      context.drawImage(nextBtn, canvasWidth / 2 + 50, y - 15, 30, 30)
+    }
+  }
+  
+  // 绘制自己的排名
+  drawSelfRanking() {
+    const y = canvasHeight - 100
+    
+    // 绘制背景
+    context.fillStyle = 'rgba(0, 0, 0, 0.5)'
+    context.fillRect(30, y - 30, canvasWidth - 60, 60)
+    
+    // 绘制标题
+    context.fillStyle = '#ffffff'
+    context.font = 'bold 16px Arial'
+    context.textAlign = 'left'
+    context.fillText('我的排名', 50, y - 10)
+    
+    // 绘制排名
+    context.fillStyle = '#ffcc00'
+    context.font = 'bold 18px Arial'
+    context.textAlign = 'center'
+    context.fillText(this.selfData.rank, 50, y + 15)
+    
+    // 绘制头像
+    const defaultAvatar = this.resourceLoader.get('defaultAvatar')
+    if (this.selfData.avatarUrl) {
+      // 加载玩家头像
+      const avatar = wx.createImage()
+      avatar.src = this.selfData.avatarUrl
+      avatar.onload = () => {
+        // 绘制圆形头像
+        context.save()
+        context.beginPath()
+        context.arc(120, y, 20, 0, Math.PI * 2, false)
+        context.clip()
+        context.drawImage(avatar, 100, y - 20, 40, 40)
+        context.restore()
+      }
+      avatar.onerror = () => {
+        // 使用默认头像
+        if (defaultAvatar) {
+          context.drawImage(defaultAvatar, 100, y - 20, 40, 40)
+        }
+      }
+    } else if (defaultAvatar) {
+      context.drawImage(defaultAvatar, 100, y - 20, 40, 40)
+    }
+    
+    // 绘制昵称
+    context.fillStyle = '#ffffff'
+    context.font = '16px Arial'
+    context.textAlign = 'left'
+    const nickname = this.selfData.nickname || '未知玩家'
+    context.fillText(nickname, 180, y + 5)
+    
+    // 绘制分数
+    context.fillStyle = '#ffcc00'
+    context.font = 'bold 18px Arial'
+    context.textAlign = 'left'
+    
+    if (this.rankType === 'time') {
+      // 时间格式化
+      const time = this.selfData.score
+      const minutes = Math.floor(time / 60)
+      const seconds = time % 60
+      const timeText = `${minutes}:${seconds < 10 ? '0' + seconds : seconds}`
+      context.fillText(timeText, 320, y + 5)
+    } else {
+      context.fillText(this.selfData.score, 320, y + 5)
+    }
+  }
+  
+  // 显示错误信息
+  showError(message) {
+    context.clearRect(0, 0, canvasWidth, canvasHeight)
+    
+    // 绘制背景
+    context.fillStyle = 'rgba(0, 0, 0, 0.6)'
+    context.fillRect(0, 0, canvasWidth, canvasHeight)
+    
+    // 绘制错误信息
+    context.fillStyle = '#ff0000'
+    context.font = 'bold 18px Arial'
+    context.textAlign = 'center'
+    context.fillText(message, canvasWidth / 2, canvasHeight / 2)
+  }
 }
 
-// 初始化排行榜渲染器
+// 创建排行榜渲染器实例
 const rankingRenderer = new RankingRenderer()
